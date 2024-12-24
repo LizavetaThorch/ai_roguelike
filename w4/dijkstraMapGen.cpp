@@ -123,5 +123,3 @@ void dmaps::gen_allies_map(flecs::world& ecs, std::vector<float>& map)
         process_dmap(map, dd);
     });
 }
-
-

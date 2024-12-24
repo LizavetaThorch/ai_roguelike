@@ -39,6 +39,75 @@ static flecs::entity create_hive(flecs::entity e)
   return e;
 }
 
+// NEW
+static void create_mage_behaviour(flecs::entity e) {
+    BehNode* root = utility_selector({
+      std::make_pair(
+        sequence({
+          find_enemy(e, 4.0f, "attack_target"),
+          move_to_entity(e, "attack_target"),
+        }),
+        [](Blackboard& bb) { return 80.0f; } // Приоритет атаки
+      ),
+      std::make_pair(
+        sequence({
+          is_low_hp(20.f),
+          find_enemy(e, 4.0f, "flee_from"),
+          flee(e, "flee_from"),
+        }),
+        [](Blackboard& bb) { return 100.0f; } // Убегание при низком здоровье
+      ),
+      std::make_pair(
+        sequence({
+          find_enemy(e, 3.0f, "allied_map"),
+          move_to_entity(e, "allied_map"),
+        }),
+        [](Blackboard& bb) { return 50.0f; } // Ближе к союзникам
+      )
+        });
+    e.set(BehaviourTree{ root });
+}
+
+static flecs::entity create_mage(flecs::world& ecs) {
+    Position pos = find_free_dungeon_tile(ecs);
+    flecs::entity mage = ecs.entity()
+        .set(Position{ pos.x, pos.y })
+        .set(MovePos{ pos.x, pos.y })
+        .set(Hitpoints{ 30.f })
+        .set(Action{ EA_NOP })
+        .set(Team{ 1 })
+        .set(Blackboard{});
+
+    create_mage_behaviour(mage);
+    return mage;
+}
+
+
+static void create_explorer_behaviour(flecs::entity e) {
+    BehNode* root = utility_selector({
+      std::make_pair(
+        patrol(e, 10.f, "patrol_position"),
+        [](Blackboard&) { return 50.0f; }
+      )
+        });
+   e.set(BehaviourTree{ root });
+}
+
+
+static flecs::entity create_explorer(flecs::world& ecs) {
+    Position pos = find_free_dungeon_tile(ecs);
+    flecs::entity explorer = ecs.entity()
+        .set(Position{ pos.x, pos.y })
+        .set(MovePos{ pos.x, pos.y })
+        .set(Hitpoints{ 50.f })
+        .set(Action{ EA_NOP })
+        .set(Team{ 1 })
+        .set(Blackboard{});
+
+    create_explorer_behaviour(explorer);
+    return explorer;
+}
+
 
 static void create_fuzzy_monster_beh(flecs::entity e)
 {
@@ -107,7 +176,7 @@ static void create_minotaur_beh(flecs::entity e)
   e.set(BehaviourTree{root});
 }
 
-static Position find_free_dungeon_tile(flecs::world &ecs)
+Position find_free_dungeon_tile(flecs::world &ecs)
 {
   static auto findMonstersQuery = ecs.query<const Position, const Hitpoints>();
   bool done = false;
