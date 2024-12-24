@@ -124,6 +124,57 @@ static void create_powerup(flecs::world &ecs, int x, int y, float amount)
     .set(Color{0xff, 0xff, 0x00, 0xff});
 }
 
+// CREATE NEW MONSTER
+static void create_explorer_monster_beh(flecs::entity e, const Position& basePos) {
+    e.set(Blackboard{});
+    BehNode* root = utility_selector({
+        std::make_pair(
+            sequence({
+                find_enemy(e, 3.f, "attack_enemy"),
+                move_to_entity(e, "attack_enemy")
+            }),
+            [&basePos](Blackboard& bb) {
+                const float enemyDist = bb.get<float>("enemyDist");
+                const float baseDist = dist(bb.get<Position>("currentPos"), basePos);
+                return (enemyDist < 3.f && baseDist < 5.f) ? 100.f - enemyDist * 10.f : 0.f;
+            }
+        ),
+        std::make_pair(
+            sequence({
+                find_enemy(e, 5.f, "flee_enemy"),
+                flee(e, "flee_enemy")
+            }),
+            [&basePos](Blackboard& bb) {
+                const float enemyDist = bb.get<float>("enemyDist");
+                const float baseDist = dist(bb.get<Position>("currentPos"), basePos);
+                return (enemyDist < 5.f && baseDist >= 5.f) ? 100.f - baseDist * 10.f : 0.f;
+            }
+        ),
+        std::make_pair(
+            sequence({
+                patrol(e, 2.f, "patrol_pos")
+            }),
+            [](Blackboard&) {
+                return 50.f;
+            }
+        ),
+        std::make_pair(
+            sequence({
+                move_to_entity(e, "base")
+            }),
+            [&basePos](Blackboard& bb) {
+                const float allyNum = bb.get<float>("alliesNum");
+                const float baseDist = dist(bb.get<Position>("currentPos"), basePos);
+                return (allyNum == 0 && baseDist > 5.f) ? 100.f - baseDist : 0.f;
+            }
+        )
+        });
+
+    e.add<WorldInfoGatherer>();
+    e.set(BehaviourTree{ root });
+}
+
+
 static void register_roguelike_systems(flecs::world &ecs)
 {
   ecs.system<PlayerInput, Action, const IsPlayer>()
@@ -190,6 +241,10 @@ void init_roguelike(flecs::world &ecs)
       {
         UnloadTexture(texture);
       });
+  
+  // Исследующий монстр
+  Position basePos = { 0, 0 }; // Позиция базы
+  create_explorer_monster_beh(create_monster(ecs, 8, 8, Color{ 255, 165, 0, 255 }, "minotaur_tex"), basePos);
 
   create_fuzzy_monster_beh(create_monster(ecs, 5, 5, Color{0xee, 0x00, 0xee, 0xff}, "minotaur_tex"));
   create_fuzzy_monster_beh(create_monster(ecs, 10, -5, Color{0xee, 0x00, 0xee, 0xff}, "minotaur_tex"));
