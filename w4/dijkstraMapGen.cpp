@@ -106,3 +106,22 @@ void dmaps::gen_hive_pack_map(flecs::world &ecs, std::vector<float> &map)
   });
 }
 
+void dmaps::gen_allies_map(flecs::world& ecs, std::vector<float>& map) 
+{
+    query_dungeon_data(ecs, [&](const DungeonData& dd)
+    {
+        init_tiles(map, dd);
+
+        query_characters_positions(ecs, [&](const Position& pos, const Team& t) 
+        {
+            if (t.team == 1) 
+            {
+                map[pos.y * dd.width + pos.x] = 0.f;
+            }
+        });
+
+        process_dmap(map, dd);
+    });
+}
+
+
