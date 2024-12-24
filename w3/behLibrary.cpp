@@ -62,39 +62,33 @@ struct UtilitySelector : public BehNode
         std::vector<float> utilities;
         float sum_exp = 0.0f;
 
-        // Вычисляем softmax
         for (const auto& node : utilityNodes) {
             float utility = node.second(bb);
             float exp_utility = std::exp(utility);
 
-            // Проверяем, что exp_utility валиден
             if (std::isfinite(exp_utility)) {
                 utilities.push_back(exp_utility);
                 sum_exp += exp_utility;
             }
             else {
-                utilities.push_back(0.0f); // На случай невалидного значения
+                utilities.push_back(0.0f);
             }
         }
 
-        // Проверяем, что сумма экспонент не равна нулю
         if (sum_exp <= 0.0f) {
-            return BEH_FAIL; // Невозможно выбрать узел
+            return BEH_FAIL;
         }
 
-        // Нормализуем утилитарные значения в вероятности
         for (float& utility : utilities) {
             utility /= sum_exp;
         }
 
-        // Генерируем случайное число для выбора узла
         std::random_device rd;
         std::mt19937 gen(rd());
         std::discrete_distribution<> dist(utilities.begin(), utilities.end());
 
         size_t selectedNode = dist(gen);
 
-        // Выполняем узел
         return utilityNodes[selectedNode].first->update(ecs, entity, bb);
     }
 };
