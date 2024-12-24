@@ -5,6 +5,8 @@
 #include "raylib.h"
 #include "blackboard.h"
 #include <algorithm>
+#include <cmath>
+#include <random>
 
 struct CompoundNode : public BehNode
 {
@@ -54,30 +56,49 @@ struct Selector : public CompoundNode
 
 struct UtilitySelector : public BehNode
 {
-  std::vector<std::pair<BehNode*, utility_function>> utilityNodes;
+    std::vector<std::pair<BehNode*, utility_function>> utilityNodes;
 
-  BehResult update(flecs::world &ecs, flecs::entity entity, Blackboard &bb) override
-  {
-    std::vector<std::pair<float, size_t>> utilityScores;
-    for (size_t i = 0; i < utilityNodes.size(); ++i)
-    {
-      const float utilityScore = utilityNodes[i].second(bb);
-      utilityScores.push_back(std::make_pair(utilityScore, i));
+    BehResult update(flecs::world& ecs, flecs::entity entity, Blackboard& bb) override {
+        std::vector<float> utilities;
+        float sum_exp = 0.0f;
+
+        // Вычисляем softmax
+        for (const auto& node : utilityNodes) {
+            float utility = node.second(bb);
+            float exp_utility = std::exp(utility);
+
+            // Проверяем, что exp_utility валиден
+            if (std::isfinite(exp_utility)) {
+                utilities.push_back(exp_utility);
+                sum_exp += exp_utility;
+            }
+            else {
+                utilities.push_back(0.0f); // На случай невалидного значения
+            }
+        }
+
+        // Проверяем, что сумма экспонент не равна нулю
+        if (sum_exp <= 0.0f) {
+            return BEH_FAIL; // Невозможно выбрать узел
+        }
+
+        // Нормализуем утилитарные значения в вероятности
+        for (float& utility : utilities) {
+            utility /= sum_exp;
+        }
+
+        // Генерируем случайное число для выбора узла
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::discrete_distribution<> dist(utilities.begin(), utilities.end());
+
+        size_t selectedNode = dist(gen);
+
+        // Выполняем узел
+        return utilityNodes[selectedNode].first->update(ecs, entity, bb);
     }
-    std::sort(utilityScores.begin(), utilityScores.end(), [](auto &lhs, auto &rhs)
-    {
-      return lhs.first > rhs.first;
-    });
-    for (const std::pair<float, size_t> &node : utilityScores)
-    {
-      size_t nodeIdx = node.second;
-      BehResult res = utilityNodes[nodeIdx].first->update(ecs, entity, bb);
-      if (res != BEH_FAIL)
-        return res;
-    }
-    return BEH_FAIL;
-  }
 };
+
 
 struct MoveToEntity : public BehNode
 {
@@ -298,5 +319,3 @@ BehNode *patch_up(float thres)
 {
   return new PatchUp(thres);
 }
-
-
