@@ -49,5 +49,6 @@ namespace goap
   {
       float heuristic(const WorldState& from, const WorldState& to);
       float make_plan_ida(const Planner& planner, const WorldState& from,const WorldState& to, std::vector<PlanStep>& plan);
+      float make_plan_ara(const Planner& planner, const WorldState& from, const WorldState& to, std::vector<PlanStep>& plan, float epsilon);
   }
 };

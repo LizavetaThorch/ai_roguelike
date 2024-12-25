@@ -1,8 +1,10 @@
 #include "goapPlanner.h"
 
-#include <cfloat>
 #include <vector>
 #include <cmath>
+#include <queue>
+#include <map>
+#include <algorithm>
 
 
 goap::Planner goap::create_planner()
@@ -147,4 +149,53 @@ namespace goap {
         }
     }
 
+    struct Node {
+        WorldState state;
+        float g;
+        float h;
+        size_t action;
+        Node* parent;
+    };
+
+    auto cmp = [](const Node* a, const Node* b) {
+        return (a->g + a->h) > (b->g + b->h);
+        };
+
+
+    float make_plan_with_epsilon(const Planner& planner, const WorldState& from, const WorldState& to,
+        std::vector<PlanStep>& plan, float epsilon) {
+        std::priority_queue<Node*, std::vector<Node*>, decltype(cmp)> openList(cmp);
+        std::map<WorldState, float> gScore;
+
+
+        gScore[from] = 0;
+        openList.push(new Node{ from, 0, heuristic(from, to), size_t(-1), nullptr });
+
+        while (!openList.empty()) {
+            Node* current = openList.top();
+            openList.pop();
+
+            if (current->state == to) {
+                while (current->action != size_t(-1)) {
+                    plan.emplace_back(PlanStep{ current->action, current->state });
+                    current = current->parent;
+                }
+                std::reverse(plan.begin(), plan.end());
+                return gScore[to];
+            }
+
+            for (size_t actionId : find_valid_state_transitions(planner, current->state)) {
+                WorldState nextState = apply_action(planner, actionId, current->state);
+                float tentativeG = gScore[current->state] + get_action_cost(planner, actionId);
+
+                if (gScore.find(nextState) == gScore.end() || tentativeG < gScore[nextState]) {
+                    gScore[nextState] = tentativeG;
+                    float h = heuristic(nextState, to);
+                    openList.push(new Node{ nextState, tentativeG, epsilon * h, actionId, current });
+                }
+            }
+        }
+
+        return -1;
+    }
 }
