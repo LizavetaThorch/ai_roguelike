@@ -13,13 +13,16 @@ struct PlanNode
   size_t actionId;
 };
 
-static float heuristic(const goap::WorldState &from, const goap::WorldState &to)
+namespace goap
 {
-  float cost = 0;
-  for (size_t i = 0; i < to.size(); ++i)
-    if (to[i] >= 0) // we care about it
-      cost += float(abs(to[i] - from[i]));
-  return cost;
+    float heuristic(const WorldState& from, const WorldState& to)
+    {
+        float cost = 0;
+        for (size_t i = 0; i < to.size(); ++i)
+            if (to[i] >= 0) // we care about it
+                cost += float(abs(to[i] - from[i]));
+        return cost;
+    }
 }
 
 static void reconstruct_plan(PlanNode &goal_node, const std::vector<PlanNode> &closed, std::vector<goap::PlanStep> &plan)
