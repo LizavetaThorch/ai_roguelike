@@ -243,7 +243,7 @@ void update_monster_behavior(flecs::world& ecs) {
         if (team.team != 1) return;
 
         Position playerPos = find_player_position(ecs);
-        bool playerVisible = dist(pos, playerPos) <= 10.0f;
+        bool playerVisible = dist(pos, playerPos) <= 7.0f;
 
         if (playerVisible) {
             bool allyAttacking = false;
