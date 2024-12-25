@@ -31,3 +31,7 @@ BehNode *flee(flecs::entity entity, const char *bb_name);
 BehNode *patrol(flecs::entity entity, float patrol_dist, const char *bb_name);
 BehNode *patch_up(float thres);
 
+// NEW
+bool is_player_attacked(flecs::world& ecs, const Position& playerPos);
+Position find_player_position(flecs::world& ecs);
+Position calculate_surround_position(const Position& current, const Position& target);

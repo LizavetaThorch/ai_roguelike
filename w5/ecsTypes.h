@@ -73,6 +73,7 @@ enum Actions
   EA_ATTACK = EA_MOVE_END,
   EA_HEAL_SELF,
   EA_PASS,
+  EA_SURROUND,
   EA_NUM
 };
 
