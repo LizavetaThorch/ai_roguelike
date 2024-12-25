@@ -34,4 +34,5 @@ BehNode *patch_up(float thres);
 // NEW
 bool is_player_attacked(flecs::world& ecs, const Position& playerPos);
 Position find_player_position(flecs::world& ecs);
+Position find_enemy_position(flecs::world& ecs, const Position& currentPos, float maxDistance = FLT_MAX);
 Position calculate_surround_position(const Position& current, const Position& target);

@@ -176,6 +176,7 @@ private:
     }
 };
 
+
 // states
 State* create_attack_enemy_state()
 {
@@ -241,15 +242,8 @@ void update_monster_behavior(flecs::world& ecs) {
     monsterQuery.each([&](flecs::entity entity, const Position& pos, const Team& team, Action& action) {
         if (team.team != 1) return;
 
-        bool playerVisible = false;
-        Position playerPos;
-        ecs.query<const Position, const Team>().each([&](const Position& p, const Team& t) {
-            if (t.team == 0)
-            {
-                playerVisible = true;
-                playerPos = p;
-            }
-            });
+        Position playerPos = find_player_position(ecs);
+        bool playerVisible = dist(pos, playerPos) <= 10.0f;
 
         if (playerVisible) {
             bool allyAttacking = false;
@@ -286,35 +280,28 @@ bool is_player_attacked(flecs::world& ecs, const Position& playerPos)
     return attacked;
 }
 
-void process_monster_actions(flecs::world& ecs) {
+void process_monster_actions(flecs::world& ecs) 
+{
     auto actionQuery = ecs.query<Action, Position>();
 
-    actionQuery.each([&](flecs::entity entity, Action& action, Position& monsterPos) {
-        if (action.action == EA_SURROUND) {
+    actionQuery.each([&](flecs::entity entity, Action& action, Position& monsterPos) 
+        {
+        if (action.action == EA_SURROUND) 
+        {
             Position playerPos = find_player_position(ecs);
-            Position surroundPos = calculate_surround_position(monsterPos, playerPos);
+            Position enemyPos = find_enemy_position(ecs, monsterPos, 6.0f);
+            Position surroundPos = calculate_surround_position(monsterPos, enemyPos);
             move_towards(monsterPos, surroundPos);
         }
-        else if (action.action == EA_ATTACK) {
+        else if (action.action == EA_ATTACK) 
+        {
             action.action = EA_ATTACK;
         }
-        else if (action.action == EA_NOP) {
+        else if (action.action == EA_NOP)
+        {
             action.action == EA_NOP;
         }
         });
-}
-
-
-Position find_player_position(flecs::world& ecs) {
-    Position playerPos;
-    ecs.query<const Position, const Team>().each([&](const Position& pos, const Team& team) 
-        {
-        if (team.team == 0) 
-        {
-            playerPos = pos;
-        }
-    });
-    return playerPos;
 }
 
 Position calculate_surround_position(const Position& current, const Position& target) 
@@ -323,4 +310,37 @@ Position calculate_surround_position(const Position& current, const Position& ta
     if (offset.x != 0) offset.x /= abs(offset.x);
     if (offset.y != 0) offset.y /= abs(offset.y);
     return { target.x + offset.y, target.y - offset.x };
+}
+
+Position find_enemy_position(flecs::world& ecs, const Position& currentPos, float maxDistance)
+{
+    Position closestEnemyPos = { 0, 0 };
+    float closestDistance = maxDistance;
+
+    auto enemiesQuery = ecs.query<const Position, const Team>();
+    enemiesQuery.each([&](const Position& enemyPos, const Team& enemyTeam)
+        {
+            if (enemyTeam.team == 1)
+            {
+                float curDist = dist(currentPos, enemyPos);
+                if (curDist < closestDistance)
+                {
+                    closestEnemyPos = enemyPos;
+                    closestDistance = curDist;
+                }
+            }
+        });
+
+    return closestEnemyPos;
+}
+
+
+Position find_player_position(flecs::world& ecs)
+{
+    Position playerPos = { 0, 0 };
+    auto playerQuery = ecs.query<const Position>();
+    playerQuery.each([&](const Position& pos) {
+        playerPos = pos;
+        });
+    return playerPos;
 }
