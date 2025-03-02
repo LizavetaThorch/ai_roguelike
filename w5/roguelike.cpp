@@ -134,7 +134,15 @@ static void register_roguelike_systems(flecs::world &ecs)
 
 void init_roguelike(flecs::world &ecs)
 {
+  printf("INIT roguelike START\n");
   register_roguelike_systems(ecs);
+
+  if (!FileExists("assets/swordsman.png") || !FileExists("assets/minotaur.png")) {
+      printf("ERROR: could not find swordsman.png or minotaur.png!\n");
+  }
+  else {
+      printf("Textures swordsman.png and minotaur.png uploaded successfully\n");
+  }
 
   ecs.entity("swordsman_tex")
     .set(Texture2D{LoadTexture("assets/swordsman.png")});
@@ -148,6 +156,7 @@ void init_roguelike(flecs::world &ecs)
         UnloadTexture(texture);
       });
 
+  printf("Creating monsters and a player\n");
   create_hive_monster(create_monster(ecs, Color{0xee, 0x00, 0xee, 0xff}, "minotaur_tex"));
   create_hive_monster(create_monster(ecs, Color{0xee, 0x00, 0xee, 0xff}, "minotaur_tex"));
   create_hive_monster(create_monster(ecs, Color{0x11, 0x11, 0x11, 0xff}, "minotaur_tex"));
@@ -158,22 +167,33 @@ void init_roguelike(flecs::world &ecs)
   ecs.entity("world")
     .set(TurnCounter{})
     .set(ActionLog{});
+  printf("Initialization of the roguelike is complete\n");
 }
 
 void init_dungeon(flecs::world &ecs, char *tiles, size_t w, size_t h)
 {
+  printf("Initialization of the dungeon has begun\n");
   flecs::entity wallTex = ecs.entity("wall_tex")
     .set(Texture2D{LoadTexture("assets/wall.png")});
   flecs::entity floorTex = ecs.entity("floor_tex")
     .set(Texture2D{LoadTexture("assets/floor.png")});
+
+  if (!FileExists("assets/wall.png") || !FileExists("assets/floor.png")) {
+      printf("Error: could not find wall.png or floor.png!\n");
+  }
+  else {
+      printf("Textures wall.png and floor.png uploaded successfully\n");
+  }
 
   std::vector<char> dungeonData;
   dungeonData.resize(w * h);
   for (size_t y = 0; y < h; ++y)
     for (size_t x = 0; x < w; ++x)
       dungeonData[y * w + x] = tiles[y * w + x];
+  
   ecs.entity("dungeon")
-    .set(DungeonData{dungeonData, w, h});
+      .set(DungeonData{ dungeonData, w, h })
+      .add<TextureSource>(floorTex);
 
   for (size_t y = 0; y < h; ++y)
     for (size_t x = 0; x < w; ++x)
@@ -183,12 +203,18 @@ void init_dungeon(flecs::world &ecs, char *tiles, size_t w, size_t h)
         .add<BackgroundTile>()
         .set(Position{int(x), int(y)})
         .set(Color{255, 255, 255, 255});
-      if (tile == dungeon::wall)
-        tileEntity.add<TextureSource>(wallTex);
-      else if (tile == dungeon::floor)
-        tileEntity.add<TextureSource>(floorTex);
+
+      if (tile == dungeon::wall) {
+          tileEntity.add<TextureSource>(wallTex);
+          printf("The wall at (%d, %d) has been added\n", int(x), int(y));
+      } else if(tile == dungeon::floor) {
+          tileEntity.add<TextureSource>(floorTex);
+          printf("FLOOR on (%d, %d) added{n}", int(x), int(y));
+      }
     }
+  printf("The initialization of the dungeon is complete\n");
 }
+
 
 
 static bool is_player_acted(flecs::world &ecs)
