@@ -166,3 +166,9 @@ struct DmapWeights
 };
 
 struct Hive {};
+
+struct SpawnPoint {
+    float spawnTimer;  // Таймер для спавна
+    float spawnRate;   // Время между спавнами
+    int team;          // 0 - рыцари, 1 - монстры
+};

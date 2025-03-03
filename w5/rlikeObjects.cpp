@@ -3,6 +3,9 @@
 #include "dungeonUtils.h"
 #include "blackboard.h"
 
+#include <cstdio>  // Для отладочных сообщений
+
+
 flecs::entity create_hive(flecs::entity e)
 {
   e.add<Hive>();
@@ -27,6 +30,7 @@ static Position find_free_dungeon_tile(flecs::world &ecs)
   };
   return {0, 0};
 }
+
 
 flecs::entity create_monster(flecs::world &ecs, Color col, const char *texture_src)
 {
@@ -81,3 +85,55 @@ void create_powerup(flecs::world &ecs, int x, int y, float amount)
     .set(Color{0xff, 0xff, 0x00, 0xff});
 }
 
+// Функция для создания спавн-точек
+void create_spawn_points(flecs::world& ecs, int num_spawns, int team) {
+    for (int i = 0; i < num_spawns; ++i) {
+        Position spawn_pos = dungeon::find_walkable_tile(ecs); // Ищем проходимую клетку
+        printf("Создана спавн-точка команды %d в (%.2f, %.2f)\n", team, spawn_pos.x, spawn_pos.y);
+
+        ecs.entity()
+            .set(spawn_pos)
+            .set(SpawnPoint{ 0.0f, 5.0f, team });
+    }
+}
+
+// ?? Система, которая спавнит юнитов
+void spawn_units(flecs::world& ecs) {
+    ecs.system<SpawnPoint, Position>()
+        .each([&](flecs::entity e, SpawnPoint& spawner, Position& pos) {
+        spawner.spawnTimer -= ecs.delta_time(); // Уменьшаем таймер
+
+        if (spawner.spawnTimer <= 0.0f) { // Если пора спавнить нового юнита
+            const char* texture = spawner.team == 0 ? "swordsman_tex" : "minotaur_tex";
+            Color color = spawner.team == 0 ? WHITE : RED;
+
+            printf("Спавним %s в (%.2f, %.2f)\n", (spawner.team == 0 ? "рыцаря" : "монстра"), pos.x, pos.y);
+
+            create_monster(ecs, color, texture); // Используем ecs, а не e.world()
+
+            spawner.spawnTimer = spawner.spawnRate; // Сброс таймера
+        }
+            });
+}
+
+// Добавляем спавны при инициализации игры
+void setup_spawners(flecs::world& ecs) {
+    create_spawn_points(ecs, 3, 0); // 3 спавна для рыцарей
+    create_spawn_points(ecs, 3, 1); // 3 спавна для монстров
+
+    ecs.system<SpawnPoint, Position>()
+        .each([&](flecs::entity e, SpawnPoint& spawner, Position& pos) {
+        spawner.spawnTimer -= ecs.delta_time(); // Уменьшаем таймер
+
+        if (spawner.spawnTimer <= 0.0f) {
+            const char* texture = spawner.team == 0 ? "swordsman_tex" : "minotaur_tex";
+            Color color = spawner.team == 0 ? WHITE : RED;
+
+            printf("Спавним %s в (%.2f, %.2f)\n", (spawner.team == 0 ? "рыцаря" : "монстра"), pos.x, pos.y);
+
+            create_monster(ecs, color, texture); // Используем ecs, а не e.world()
+
+            spawner.spawnTimer = spawner.spawnRate;
+        }
+            });
+}

@@ -8,3 +8,5 @@ void create_player(flecs::world &ecs, const char *texture_src);
 void create_heal(flecs::world &ecs, int x, int y, float amount);
 void create_powerup(flecs::world &ecs, int x, int y, float amount);
 
+
+void setup_spawners(flecs::world& ecs);
