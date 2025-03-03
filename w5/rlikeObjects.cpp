@@ -97,5 +97,5 @@ flecs::entity create_heal(flecs::world& ecs, Position pos, float amount)
     return ecs.entity()
         .set(Position{ pos.x, pos.y })
         .set(HealAmount{ amount })
-        .set(Color{ 0xff, 0x44, 0x44, 0xff });
+        .set(Color{ 30, 144, 255, 255 });
 }
