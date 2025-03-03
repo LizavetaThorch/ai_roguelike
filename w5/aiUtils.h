@@ -59,3 +59,6 @@ inline size_t reg_entity_blackboard_var(flecs::entity entity, const char *bb_nam
   return res;
 }
 
+inline float utility_spawn(float enemyDist) {
+    return enemyDist <= 10.f ? 1.f : 0.f;
+}

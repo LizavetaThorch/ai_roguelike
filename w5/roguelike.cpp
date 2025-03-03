@@ -136,7 +136,15 @@ void init_roguelike(flecs::world& ecs)
 {
     printf("INIT roguelike START\n");
     register_roguelike_systems(ecs);
-    setup_spawners(ecs);
+    create_spawn_point(ecs, 0); // Рыцари
+    create_spawn_point(ecs, 1); // Монстры
+
+    ecs.system<>().each([&]() {
+        spawn_system(ecs);
+    });
+
+    create_spawn_point(ecs, 0); // Рыцари
+    create_spawn_point(ecs, 1); // Монстры
 
     if (!FileExists("assets/swordsman.png") || !FileExists("assets/minotaur.png")) {
         printf("ERROR: could not find swordsman.png or minotaur.png!\n");
@@ -168,6 +176,12 @@ void init_roguelike(flecs::world& ecs)
     ecs.entity("world")
         .set(TurnCounter{})
         .set(ActionLog{});
+    
+    for (int i = 0; i < 5; ++i)
+    {
+        Position pos = dungeon::find_walkable_tile(ecs);
+        create_heal(ecs, pos, 50.f);
+    }
     printf("Initialization of the roguelike is complete\n");
 }
 
@@ -415,6 +429,21 @@ void process_turn(flecs::world& ecs)
         }
         process_actions(ecs);
 
+        // Лечение swordsman и minotaur при взаимодействии с точками
+        auto entitiesWithHitpoints = ecs.query<const Position, Hitpoints>(); // Все сущности с Hitpoints
+        auto healPickup = ecs.query<const Position, const HealAmount>();
+
+        ecs.defer([&] {
+            entitiesWithHitpoints.each([&](flecs::entity entity, const Position& pos, Hitpoints& hp) {
+                healPickup.each([&](flecs::entity healEntity, const Position& ppos, const HealAmount& amt) {
+                    if (pos == ppos) {
+                        hp.hitpoints += amt.amount;
+                        healEntity.destruct(); // Уничтожаем точку лечения
+                    }
+                });
+            });
+        });
+
         std::vector<float> approachMap;
         dmaps::gen_player_approach_map(ecs, approachMap);
         ecs.entity("approach_map")
@@ -455,5 +484,26 @@ void print_stats(flecs::world& ecs)
                 DrawText(msg.c_str(), 20, yPos, 20, WHITE);
                 yPos -= 20;
             }
+        });
+}
+
+
+static void spawn_system(flecs::world& ecs) {
+    auto spawnQuery = ecs.query<const Position, SpawnPoint>();
+
+    spawnQuery.each([&](const Position& pos, SpawnPoint& sp) {
+        sp.timeToSpawn -= ecs.delta_time();
+        if (sp.timeToSpawn <= 0.f) {
+            sp.timeToSpawn = sp.timeBetweenSpawns;
+
+            if (sp.team == 0) {
+                // Спавн рыцаря
+                create_monster(ecs, Color{ 0, 255, 0, 255 }, "swordsman_tex");
+            }
+            else {
+                // Спавн монстра
+                create_monster(ecs, Color{ 0xff, 0x00, 0x00, 0xff }, "minotaur_tex");
+            }
+        }
         });
 }
