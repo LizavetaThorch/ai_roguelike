@@ -444,6 +444,7 @@ void process_turn(flecs::world& ecs)
             });
         });
 
+        // Генерация карт Дейкстры
         std::vector<float> approachMap;
         dmaps::gen_player_approach_map(ecs, approachMap);
         ecs.entity("approach_map")
@@ -458,6 +459,30 @@ void process_turn(flecs::world& ecs)
         dmaps::gen_hive_pack_map(ecs, hiveMap);
         ecs.entity("hive_map")
             .set(DijkstraMapData{ hiveMap });
+
+        // Карты Дейкстры для точек спавна
+        std::vector<float> spawnMapKnights;
+        std::vector<float> spawnMapMonsters;
+        dmaps::gen_spawn_points_map(ecs, spawnMapKnights, 0);  // Рыцари
+        dmaps::gen_spawn_points_map(ecs, spawnMapMonsters, 1); // Монстры
+
+        ecs.entity("spawn_map_knights").set(DijkstraMapData{ spawnMapKnights });
+        ecs.entity("spawn_map_monsters").set(DijkstraMapData{ spawnMapMonsters });
+
+        // Карты Дейкстры для позиций монстров и рыцарей
+        std::vector<float> teamMapKnights;
+        std::vector<float> teamMapMonsters;
+        dmaps::gen_team_positions_map(ecs, teamMapKnights, 0);  // Карта рыцарей
+        dmaps::gen_team_positions_map(ecs, teamMapMonsters, 1); // Карта монстров
+
+        ecs.entity("team_map_knights").set(DijkstraMapData{ teamMapKnights });
+        ecs.entity("team_map_monsters").set(DijkstraMapData{ teamMapMonsters });
+
+        // Карта Дейкстры для точек лечения
+        std::vector<float> healMap;
+        dmaps::gen_heal_points_map(ecs, healMap);
+
+        ecs.entity("heal_map").set(DijkstraMapData{ healMap });
 
         //ecs.entity("flee_map").add<VisualiseMap>();
         ecs.entity("hive_follower_sum")

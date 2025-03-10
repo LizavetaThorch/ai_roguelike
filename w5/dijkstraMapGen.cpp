@@ -105,3 +105,56 @@ void dmaps::gen_hive_pack_map(flecs::world &ecs, std::vector<float> &map)
     process_dmap(map, dd);
   });
 }
+
+void dmaps::gen_spawn_points_map(flecs::world& ecs, std::vector<float>& map, int team)
+{
+    auto spawnQuery = ecs.query<const Position, const SpawnPoint>();
+
+    query_dungeon_data(ecs, [&](const DungeonData& dd)
+        {
+            init_tiles(map, dd);
+
+            spawnQuery.each([&](const Position& pos, const SpawnPoint& sp)
+                {
+                    if (sp.team == team)
+                        map[pos.y * dd.width + pos.x] = 0.f;
+                });
+
+            process_dmap(map, dd);
+        });
+}
+
+void dmaps::gen_team_positions_map(flecs::world& ecs, std::vector<float>& map, int team)
+{
+    auto teamQuery = ecs.query<const Position, const Team>();
+
+    query_dungeon_data(ecs, [&](const DungeonData& dd)
+        {
+            init_tiles(map, dd);
+
+            teamQuery.each([&](const Position& pos, const Team& t)
+                {
+                    if (t.team == team)
+                        map[pos.y * dd.width + pos.x] = 0.f;
+                });
+
+            process_dmap(map, dd);
+        });
+}
+
+void dmaps::gen_heal_points_map(flecs::world& ecs, std::vector<float>& map)
+{
+    auto healQuery = ecs.query<const Position, const HealAmount>();
+
+    query_dungeon_data(ecs, [&](const DungeonData& dd)
+        {
+            init_tiles(map, dd);
+
+            healQuery.each([&](const Position& pos, const HealAmount&)
+                {
+                    map[pos.y * dd.width + pos.x] = 0.f;
+                });
+
+            process_dmap(map, dd);
+        });
+}
