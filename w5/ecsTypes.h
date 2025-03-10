@@ -172,3 +172,12 @@ struct SpawnPoint {
     float timeBetweenSpawns = 5.f; // Спавн каждые 5 секунд
     int team = 0; // 0 - рыцари, 1 - монстры
 };
+
+struct OmapWeights {
+    struct WtData
+    {
+        float mult = 1.f;
+        float pow = 1.f;
+    };
+    std::unordered_map<std::string, WtData> weights;
+};

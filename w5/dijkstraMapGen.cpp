@@ -158,3 +158,41 @@ void dmaps::gen_heal_points_map(flecs::world& ecs, std::vector<float>& map)
             process_dmap(map, dd);
         });
 }
+
+void dmaps::gen_flow_map(const std::vector<float>& dijkstraMap, const DungeonData& dd, std::vector<Position>& flowMap)
+{
+    flowMap.resize(dd.width * dd.height);
+
+    for (size_t y = 0; y < dd.height; ++y)
+    {
+        for (size_t x = 0; x < dd.width; ++x)
+        {
+            size_t idx = y * dd.width + x;
+            float minVal = dijkstraMap[idx];
+            Position dir = { 0, 0 };
+
+            if (x > 0 && dijkstraMap[idx - 1] < minVal)
+            {
+                minVal = dijkstraMap[idx - 1];
+                dir = { -1, 0 };
+            }
+            if (x < dd.width - 1 && dijkstraMap[idx + 1] < minVal)
+            {
+                minVal = dijkstraMap[idx + 1];
+                dir = { 1, 0 };
+            }
+            if (y > 0 && dijkstraMap[idx - dd.width] < minVal)
+            {
+                minVal = dijkstraMap[idx - dd.width];
+                dir = { 0, -1 };
+            }
+            if (y < dd.height - 1 && dijkstraMap[idx + dd.width] < minVal)
+            {
+                minVal = dijkstraMap[idx + dd.width];
+                dir = { 0, 1 };
+            }
+
+            flowMap[idx] = dir;
+        }
+    }
+}
