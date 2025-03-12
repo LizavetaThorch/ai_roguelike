@@ -416,6 +416,25 @@ static void gather_world_info(flecs::world& ecs)
         });
 }
 
+
+static void process_melee_damage(flecs::world& ecs) {
+    auto damageDealersQuery = ecs.query<const Position, const MeleeDamage, const Team>();
+
+    auto damageReceiversQuery = ecs.query<const Position, Hitpoints, const Team>();
+
+    damageDealersQuery.each([&](flecs::entity dealer, const Position& dealerPos, const MeleeDamage& damage, const Team& dealerTeam) {
+        damageReceiversQuery.each([&](flecs::entity receiver, const Position& receiverPos, Hitpoints& hp, const Team& receiverTeam) {
+            if (dealer != receiver && dealerTeam.team != receiverTeam.team) {
+                if (dist_sq(dealerPos, receiverPos) <= 1.0f) {
+                    hp.hitpoints -= damage.damage;
+                    push_to_log(ecs, "Entity damaged another entity");
+                }
+            }
+            });
+        });
+}
+
+
 void process_turn(flecs::world& ecs)
 {
     auto stateMachineAct = ecs.query<StateMachine>();
@@ -442,10 +461,7 @@ void process_turn(flecs::world& ecs)
             turnIncrementer.each([](TurnCounter& tc) { tc.count++; });
         }
         process_actions(ecs);
-
-        auto healPickup = ecs.query<const Position, const HealAmount>();
-        auto entitiesWithHitpoints = ecs.query<const Position, Hitpoints>();
-
+        process_melee_damage(ecs);
 
         // Генерация карт Дейкстры
         std::vector<float> approachMap;
