@@ -275,7 +275,7 @@ int main(int /*argc*/, const char ** /*argv*/)
     BeginDrawing();
       ClearBackground(BLACK);
       BeginMode2D(camera);
-        ecs.progress();
+      ecs.progress();
       EndMode2D();
       print_stats(ecs);
       // Advance to next frame. Process submitted rendering primitives.

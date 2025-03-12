@@ -46,7 +46,7 @@ flecs::entity create_monster(flecs::world &ecs, Color col, const char *texture_s
     .add<TextureSource>(textureSrc)
     .set(Team{1})
     .set(NumActions{1, 0})
-    .set(MeleeDamage{20.f})
+    .set(MeleeDamage{50.f})
     .set(Blackboard{});
 }
 
@@ -69,14 +69,6 @@ void create_player(flecs::world &ecs, const char *texture_src)
     .set(MeleeDamage{50.f});
 }
 
-void create_heal(flecs::world &ecs, int x, int y, float amount)
-{
-  ecs.entity()
-    .set(Position{x, y})
-    .set(HealAmount{amount})
-    .set(Color{0xff, 0x44, 0x44, 0xff});
-}
-
 void create_powerup(flecs::world &ecs, int x, int y, float amount)
 {
   ecs.entity()
@@ -97,5 +89,6 @@ flecs::entity create_heal(flecs::world& ecs, Position pos, float amount)
     return ecs.entity()
         .set(Position{ pos.x, pos.y })
         .set(HealAmount{ amount })
-        .set(Color{ 30, 144, 255, 255 });
+        .set(Color{ 30, 144, 255, 255 })
+        .add<IsHealPoint>();
 }

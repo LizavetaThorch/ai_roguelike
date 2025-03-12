@@ -11,7 +11,7 @@ SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 file(GLOB_RECURSE HW5_SOURCES1 . ./*.[ch]pp)
 file(GLOB_RECURSE HW5_SOURCES2 . ./*.[ch])
 
-add_executable(hw5 ${HW5_SOURCES1} ${HW5_SOURCES2})
+add_executable(hw5 ${HW5_SOURCES1} ${HW5_SOURCES2}   )
 target_link_libraries(hw5 PUBLIC project_options project_warnings)
 target_link_libraries(hw5 PUBLIC raylib flecs_static)
 

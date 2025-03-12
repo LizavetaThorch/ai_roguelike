@@ -128,8 +128,8 @@ static void register_roguelike_systems(flecs::world& ecs)
                                         int((float(x) + 0.2f) * tile_size), int((float(y) + 0.5f) * tile_size), 150, WHITE);
                             }
                     });
-            });
-}
+        });
+ }
 
 
 void init_roguelike(flecs::world& ecs)
@@ -285,6 +285,10 @@ static void process_actions(flecs::world& ecs)
     auto processActions = ecs.query<Action, Position, MovePos, const MeleeDamage, const Team>();
     auto processHeals = ecs.query<Action, Hitpoints>();
     auto checkAttacks = ecs.query<const MovePos, Hitpoints, const Team>();
+
+    auto processEnemyAttacks = ecs.query<const Position, const Team, const MeleeDamage>();
+    auto checkPlayerAttacks = ecs.query<const Position, Hitpoints, const IsPlayer>();
+
     // Process all actions
     ecs.defer([&]
         {
@@ -339,6 +343,7 @@ static void process_actions(flecs::world& ecs)
     auto playerPickup = ecs.query<const IsPlayer, const Position, Hitpoints, MeleeDamage>();
     auto healPickup = ecs.query<const Position, const HealAmount>();
     auto powerupPickup = ecs.query<const Position, const PowerupAmount>();
+
     ecs.defer([&]
         {
             playerPickup.each([&](const IsPlayer&, const Position& pos, Hitpoints& hp, MeleeDamage& dmg)
@@ -347,10 +352,18 @@ static void process_actions(flecs::world& ecs)
                         {
                             if (pos == ppos)
                             {
-                                hp.hitpoints += amt.amount;
-                                entity.destruct();
+                                if (hp.hitpoints < 100.f)
+                                {
+                                    hp.hitpoints += amt.amount;
+                                    if (hp.hitpoints > 100.f) 
+                                    {
+                                        hp.hitpoints = 100.f;
+                                    }
+                                    entity.destruct();
+                                }
                             }
                         });
+
                     powerupPickup.each([&](flecs::entity entity, const Position& ppos, const PowerupAmount& amt)
                         {
                             if (pos == ppos)
@@ -361,6 +374,7 @@ static void process_actions(flecs::world& ecs)
                         });
                 });
         });
+    
 }
 
 template<typename T>
@@ -429,20 +443,9 @@ void process_turn(flecs::world& ecs)
         }
         process_actions(ecs);
 
-        // Лечение swordsman и minotaur при взаимодействии с точками
-        auto entitiesWithHitpoints = ecs.query<const Position, Hitpoints>(); // Все сущности с Hitpoints
         auto healPickup = ecs.query<const Position, const HealAmount>();
+        auto entitiesWithHitpoints = ecs.query<const Position, Hitpoints>();
 
-        ecs.defer([&] {
-            entitiesWithHitpoints.each([&](flecs::entity entity, const Position& pos, Hitpoints& hp) {
-                healPickup.each([&](flecs::entity healEntity, const Position& ppos, const HealAmount& amt) {
-                    if (pos == ppos) {
-                        hp.hitpoints += amt.amount;
-                        healEntity.destruct(); // Уничтожаем точку лечения
-                    }
-                });
-            });
-        });
 
         // Генерация карт Дейкстры
         std::vector<float> approachMap;

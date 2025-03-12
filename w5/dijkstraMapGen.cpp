@@ -152,6 +152,7 @@ void dmaps::gen_heal_points_map(flecs::world& ecs, std::vector<float>& map)
 
             healQuery.each([&](const Position& pos, const HealAmount&)
                 {
+                    /*printf("Heal at (%d, %d)\n", int(pos.x), int(pos.y));*/
                     map[pos.y * dd.width + pos.x] = 0.f;
                 });
 
@@ -159,40 +160,33 @@ void dmaps::gen_heal_points_map(flecs::world& ecs, std::vector<float>& map)
         });
 }
 
-void dmaps::gen_flow_map(const std::vector<float>& dijkstraMap, const DungeonData& dd, std::vector<Position>& flowMap)
-{
-    flowMap.resize(dd.width * dd.height);
+void dmaps::generate_flow_map(const std::vector<float>& dijkstra_map, const DungeonData& dd, std::vector<Position>& flow_map) {
+    flow_map.resize(dd.width * dd.height);
 
-    for (size_t y = 0; y < dd.height; ++y)
-    {
-        for (size_t x = 0; x < dd.width; ++x)
-        {
+    for (size_t y = 0; y < dd.height; ++y) {
+        for (size_t x = 0; x < dd.width; ++x) {
             size_t idx = y * dd.width + x;
-            float minVal = dijkstraMap[idx];
+            float min_val = dijkstra_map[idx];
             Position dir = { 0, 0 };
 
-            if (x > 0 && dijkstraMap[idx - 1] < minVal)
-            {
-                minVal = dijkstraMap[idx - 1];
+            if (x > 0 && dijkstra_map[idx - 1] < min_val) {
+                min_val = dijkstra_map[idx - 1];
                 dir = { -1, 0 };
             }
-            if (x < dd.width - 1 && dijkstraMap[idx + 1] < minVal)
-            {
-                minVal = dijkstraMap[idx + 1];
+            if (x < dd.width - 1 && dijkstra_map[idx + 1] < min_val) {
+                min_val = dijkstra_map[idx + 1];
                 dir = { 1, 0 };
             }
-            if (y > 0 && dijkstraMap[idx - dd.width] < minVal)
-            {
-                minVal = dijkstraMap[idx - dd.width];
+            if (y > 0 && dijkstra_map[idx - dd.width] < min_val) {
+                min_val = dijkstra_map[idx - dd.width];
                 dir = { 0, -1 };
             }
-            if (y < dd.height - 1 && dijkstraMap[idx + dd.width] < minVal)
-            {
-                minVal = dijkstraMap[idx + dd.width];
+            if (y < dd.height - 1 && dijkstra_map[idx + dd.width] < min_val) {
+                min_val = dijkstra_map[idx + dd.width];
                 dir = { 0, 1 };
             }
 
-            flowMap[idx] = dir;
+            flow_map[idx] = dir;
         }
     }
 }

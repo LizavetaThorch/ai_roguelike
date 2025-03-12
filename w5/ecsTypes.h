@@ -59,7 +59,10 @@ struct PatrolPos
 struct Hitpoints
 {
     float hitpoints = 10.f;
+    float maxHitpoints = 100.f;
 };
+
+struct IsHealPoint {};
 
 enum Actions
 {
@@ -169,8 +172,8 @@ struct Hive {};
 
 struct SpawnPoint {
     float timeToSpawn = 0.f;
-    float timeBetweenSpawns = 5.f; // Спавн каждые 5 секунд
-    int team = 0; // 0 - рыцари, 1 - монстры
+    float timeBetweenSpawns = 5.f;
+    int team = 0; 
 };
 
 struct OmapWeights {
