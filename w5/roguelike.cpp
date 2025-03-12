@@ -350,17 +350,11 @@ static void process_actions(flecs::world& ecs)
                 {
                     healPickup.each([&](flecs::entity entity, const Position& ppos, const HealAmount& amt)
                         {
-                            if (pos == ppos)
+                            if (pos == ppos && hp.hitpoints < 100.f)
                             {
-                                if (hp.hitpoints < 100.f)
-                                {
-                                    hp.hitpoints += amt.amount;
-                                    if (hp.hitpoints > 100.f) 
-                                    {
-                                        hp.hitpoints = 100.f;
-                                    }
-                                    entity.destruct();
-                                }
+                                hp.hitpoints = hp.maxHitpoints;
+                                entity.destruct();
+                                push_to_log(ecs, "Player healed by a health pack");
                             }
                         });
 
@@ -370,6 +364,7 @@ static void process_actions(flecs::world& ecs)
                             {
                                 dmg.damage += amt.amount;
                                 entity.destruct();
+                                push_to_log(ecs, "Player picked up a powerup");
                             }
                         });
                 });
@@ -419,13 +414,15 @@ static void gather_world_info(flecs::world& ecs)
 
 static void process_melee_damage(flecs::world& ecs) {
     auto damageDealersQuery = ecs.query<const Position, const MeleeDamage, const Team>();
-
     auto damageReceiversQuery = ecs.query<const Position, Hitpoints, const Team>();
 
     damageDealersQuery.each([&](flecs::entity dealer, const Position& dealerPos, const MeleeDamage& damage, const Team& dealerTeam) {
         damageReceiversQuery.each([&](flecs::entity receiver, const Position& receiverPos, Hitpoints& hp, const Team& receiverTeam) {
             if (dealer != receiver && dealerTeam.team != receiverTeam.team) {
-                if (dist_sq(dealerPos, receiverPos) <= 1.0f) {
+                int dx = abs(dealerPos.x - receiverPos.x);
+                int dy = abs(dealerPos.y - receiverPos.y);
+
+                if ((dx == 1 && dy == 0) || (dx == 0 && dy == 1)) {
                     hp.hitpoints -= damage.damage;
                     push_to_log(ecs, "Entity damaged another entity");
                 }

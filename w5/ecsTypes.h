@@ -92,7 +92,7 @@ struct NumActions
 
 struct MeleeDamage
 {
-    float damage = 2.f;
+    float damage = 1.f;
 };
 
 struct HealAmount

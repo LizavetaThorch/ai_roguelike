@@ -46,7 +46,7 @@ flecs::entity create_monster(flecs::world &ecs, Color col, const char *texture_s
     .add<TextureSource>(textureSrc)
     .set(Team{1})
     .set(NumActions{1, 0})
-    .set(MeleeDamage{50.f})
+    .set(MeleeDamage{45.f})
     .set(Blackboard{});
 }
 
@@ -66,7 +66,7 @@ void create_player(flecs::world &ecs, const char *texture_src)
     .set(NumActions{2, 0})
     .set(Color{255, 255, 255, 255})
     .add<TextureSource>(textureSrc)
-    .set(MeleeDamage{50.f});
+    .set(MeleeDamage{30.f});
 }
 
 void create_powerup(flecs::world &ecs, int x, int y, float amount)
